@@ -1,29 +1,89 @@
 ---
-title: "Progress Report"
+title: "Progress Report - <simeonbundt14>"
 author: "Simeon Bundt"
-date: "2024-12-04"
+date: "12-05-24"
 output: html_document
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(rvest)
+library(Lahman)
 ```
-
-
-# Progress Report - <your-github-handle>
+# Progress Report - <simeonbundt14>
 
 ## Objectives
 - Scrape Hall of Fame data for 2024 using `rvest`.
 - Clean the data to match the `HallOfFame` table in the `Lahman` package.
+- Save the cleaned data as a CSV file.
 
 ## Steps Taken
-1. Scraped the data from Baseball Reference:
-```{r}
-library(rvest)
 
+### 1. Load Required Libraries
+```{r}
 url <- "https://www.baseball-reference.com/awards/hof_2024.shtml"
 html <- read_html(url)
 tables <- html_table(html)
 data <- tables[[1]]
 head(data)
+
+
+# Extract column names from the first row and make them unique
+colnames(data) <- make.unique(as.character(unlist(data[1, ])))  
+data <- data[-1, ]
+
+# Rename columns to match the HallOfFame structure in Lahman
+cleaned_data <- data %>%
+  rename(
+    playerID = Name,
+    yearID = `YoB`,
+    votes = Votes,
+    inducted = `%vote`
+  ) %>%
+  mutate(
+    yearID = 2024,
+    votes = as.numeric(votes),
+    inducted = if_else(as.numeric(str_remove(inducted, "%")) >= 75, "Y", "N"),
+    category = "Player",
+    votedBy = "BBWAA"
+  )
+# Check the cleaned data
+head(cleaned_data)
+
+# Combine the new data with existing HallOfFame data
+updated_HallOfFame <- bind_rows(HallOfFame, cleaned_data)
+
+# Preview the combined data
+head(updated_HallOfFame)
+
+# Save the cleaned and combined data as a CSV file
+write_csv(updated_HallOfFame, "HallOfFame.csv")
+
+# Create a bar plot of Hall of Fame inductions over the years
+updated_HallOfFame %>%
+  ggplot(aes(x = yearID, fill = inducted)) +
+  geom_bar() +
+  xlim(1936, 2024) +
+  labs(
+    title = "Hall of Fame Inductions Over the Years",
+    x = "Year",
+    y = "Number of Inductions",
+    fill = "Inducted"
+  )
 ```
+
+### Challenges Faced
+- Parsing the HTML tables took time due to inconsistent formatting.
+- Some columns had unexpected data types, which caused errors in data processing.
+- The scraped table lacked default values for `category` and `votedBy`.
+- Duplicated Column Names: While trying to clean the scraped data, duplicate column names caused an error in the rename() function.
+- Non-Character Column Names: An attempt to use make.unique() on the first row to resolve the duplicated column names resulted in another error because make.unique() expects a character vector, but the first row was a data frame row.
+
+
+### Resolutions
+- Adjusted column names and added missing fields manually.
+- Used `mutate` to clean and process variables for consistency.
+- Verified the final data structure matches the `HallOfFame` table.
+- Used make.unique() to ensure all column names were unique before renaming them.
+- After making column names unique, proceeded with renaming them to match the Lahman HallOfFame dataset structure using rename().
