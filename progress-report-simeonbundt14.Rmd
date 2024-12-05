@@ -9,3 +9,21 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+
+# Progress Report - <your-github-handle>
+
+## Objectives
+- Scrape Hall of Fame data for 2024 using `rvest`.
+- Clean the data to match the `HallOfFame` table in the `Lahman` package.
+
+## Steps Taken
+1. Scraped the data from Baseball Reference:
+```{r}
+library(rvest)
+
+url <- "https://www.baseball-reference.com/awards/hof_2024.shtml"
+html <- read_html(url)
+tables <- html_table(html)
+data <- tables[[1]]
+head(data)
+```
