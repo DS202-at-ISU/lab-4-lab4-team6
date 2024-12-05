@@ -87,3 +87,4 @@ updated_HallOfFame %>%
 - Verified the final data structure matches the `HallOfFame` table.
 - Used make.unique() to ensure all column names were unique before renaming them.
 - After making column names unique, proceeded with renaming them to match the Lahman HallOfFame dataset structure using rename().
+
