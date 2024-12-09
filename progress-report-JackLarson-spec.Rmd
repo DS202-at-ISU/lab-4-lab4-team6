@@ -1,1 +1,76 @@
+---
+title: "progress-report-JackLarson-spec"
+author: "Jack Larson"
+date: "12-9-2024"
+output: html_document
+---
 
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+library(rvest)
+library(Lahman)
+library(tidyr)
+library(dplyr)
+library(stringr)
+library(readr)
+```
+# Progress Report - <JackLarson-spec>
+
+## Objectives
+- Scrape Hall of Fame data for 2024 using `rvest`.
+- Clean the data to match the `HallOfFame` table in the `Lahman` package.
+- Save the cleaned data as a CSV file.
+```{r}
+head(HallOfFame, 3)
+
+# Step 1: Scrape Hall of Fame data
+url <- "https://www.baseball-reference.com/awards/hof_2024.shtml"
+html <- read_html(url)
+
+# Extract the table containing the Hall of Fame data
+tables <- html_table(html)
+data <- tables[[1]]
+
+# Update column names
+actual_col_names <- data[1, ]
+colnames(data) <- make.unique(as.character(unlist(actual_col_names)))
+data <- data[-1, ]
+
+# Step 2: Clean the data
+# Rename columns
+data$Votes <- as.numeric(data$Votes)
+data$`%vote` <- gsub("%", "", data$`%vote`)
+data$`%vote` <- as.numeric(data$`%vote`) 
+
+# Remove rows with NA
+data <- data[complete.cases(data), ]
+
+# Add new columns and transform data
+data <- data %>%
+  rename(
+    playerID = Name,
+    yearID = `YoB`,
+    votes = Votes,
+    inducted = `%vote`
+  ) %>%
+  mutate(
+    yearID = 2024,
+    votes = as.numeric(votes),
+    inducted = if_else(as.numeric(str_remove(inducted, "%")) >= 75, "Y", "N"),
+    category = "Player",
+    votedBy = "BBWAA"
+  )
+head(data)
+head(HallOfFame)
+bind_rows(HallOfFame, cleaned_data)
+
+# Step 3: Save as CSV
+write_csv(clean, "HallOfFame_2024.csv")
+
+#Step 4: Plot it
+HallOfFame %>% 
+  ggplot(aes(x = yearID, fill = inducted)) +
+  geom_bar() +
+  xlim(c(1936, 2024))
+```
