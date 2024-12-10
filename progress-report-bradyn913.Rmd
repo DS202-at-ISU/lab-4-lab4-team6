@@ -9,4 +9,25 @@ knitr::opts_chunk$set(echo = TRUE)
 ```
 
 ## R Markdown
+```{r}
+library(rvest)
+library(dplyr)
+library(ggplot2)
 
+HallOfFame <- read.csv("HallOfFame.csv")
+
+HallOfFame2024 <- read.csv("HallOfFame_2024.csv")
+head(HallOfFame, 3)
+HallOfFameClean <- HallOfFame[, -c(8:45)]
+HallOfFameClean <- HallOfFameClean[, !(names(HallOfFameClean) %in% "ballots")]
+ncol(HallOfFameClean)
+head(HallOfFame2024)
+head(HallOfFameClean)
+
+HallOfFameComplete <- bind_rows(HallOfFameClean, HallOfFame2024)
+
+HallOfFameComplete %>% 
+  ggplot(aes(x = yearID, fill = inducted)) +
+  geom_bar() +
+  xlim(c(1936, 2025))
+```
